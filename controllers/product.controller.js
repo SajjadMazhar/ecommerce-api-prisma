@@ -28,6 +28,17 @@ exports.createProduct = async(req, res)=>{
     
 }
 
+exports.createProducts = async(req, res)=>{
+    try {
+        const products = await prisma.product.createMany({
+            data:req.body
+        })
+        res.status(201).json(products)
+    } catch (error) {
+        res.status(500).json({status:"internal server error", err:error.message})
+    }
+}
+
 exports.getProducts = async (req, res)=>{
     const id = req.params.id;
     try{
