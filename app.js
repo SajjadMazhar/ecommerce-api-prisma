@@ -9,7 +9,7 @@ const {
 } = require('./controllers/product.controller');
 const {
     createSeller,
-    // createSellers,
+    createSellers,
     getSellers, 
     updateSeller 
 } = require('./controllers/seller.controller')
@@ -30,7 +30,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(morgan('dev'));
 
 // Seller controller routes
-// app.post("/sellers", createSellers)
+app.post("/sellers", createSellers)
 app.post("/seller", createSeller)
 app.get("/seller", getSellers)
 app.patch("/seller/:id", updateSeller)

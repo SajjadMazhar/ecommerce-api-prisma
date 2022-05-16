@@ -34,8 +34,19 @@ exports.updateSeller = async (req, res)=>{
       },
       data:req.body
     })
-    res.send(sellers)
+    res.send({status:"updated", sellers})
   }catch(err){
     res.status(500).send({status:"error"})
+  }
+}
+
+exports.createSellers = async(req, res)=>{
+  try {
+    const sellers = await prisma.seller.createMany({
+      data:req.body
+    })
+    res.status(201).json({status:"created", sellers})
+  } catch (error) {
+    
   }
 }
