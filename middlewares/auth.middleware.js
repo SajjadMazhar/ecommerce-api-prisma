@@ -6,7 +6,7 @@ module.exports = async (req, res, next) => {
     const authorization = req.headers.authorization
     const token = authorization.split(" ")[1]
     const decoded = jwt.verify(token, process.env.SECRET_KEY)
-    console.log(decoded)
+    
     try {
         const user = await prisma.user.findUnique({
             where:{

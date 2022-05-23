@@ -3,7 +3,7 @@ const prisma = new PrismaClient()
 const otpGen = require("otp-generator")
 const jwt = require("jsonwebtoken")
 const {createUser} = require("../services/user.service")
-const {sendOTP} = require("../services/otp.service")
+const {sendOTP, mailOTP} = require("../services/otp.service")
 const md5 = require("md5")
 
 exports.signUp = async(req, res) =>{
@@ -18,6 +18,7 @@ exports.signUp = async(req, res) =>{
     try {
         const otp = otpGen.generate(6, {upperCaseAlphabets:false, lowerCaseAlphabets:false, specialChars:false})
         const newUser = await createUser({name, email, password, phoneNumber,role,otp})
+        mailOTP(otp, email)
         res.status(201).send({msg:"successfully signed up", data:{
             id:newUser.id,
             otp
