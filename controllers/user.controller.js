@@ -1,84 +1,110 @@
 const {PrismaClient} = require("@prisma/client")
 const prisma = new PrismaClient()
+const otpGen = require("otp-generator")
+const jwt = require("jsonwebtoken")
+const {createUser} = require("../services/user.service")
+const {sendOTP} = require("../services/otp.service")
+const md5 = require("md5")
 
-exports.createUser = async(req, res) =>{
-    const {products=[], name, email, password} = req.body
-    try{
-        const user = await prisma.user.create({
-            data:{name, email, password, products},
-        })
-        res.status(201).json({status:"created", user})
-    }catch(err){
-        res.status(500).json({status:"internal server error", err:err.message})
+exports.signUp = async(req, res) =>{
+    const {name, email, password, confirmPassword, phoneNumber, role='USER'} = req.body;
+    if(!(name && email && password && confirmPassword && phoneNumber && role)){
+        res.status(400).json({msg:"internal server error"})
     }
-}
+    if(password !== confirmPassword){
+        res.status(400).json({msg:"password don't match"})
+    }
 
-exports.getUsers = async(req, res)=>{
-    try{
-        const users = await prisma.user.findMany({
-            include:{products:true}
-        })
-        res.json({status:"success", users})
-    }catch(err){
-        res.status(500).json({status:"internal server error", err:err.message})
-    }
-}
-exports.getUserById = async(req, res)=>{
-    const id = parseInt(req.params.id)
-    try{
-        const user = await prisma.user.findMany({
-            where:{
-                id
-            },
-            include:{
-                products:true
-            }
-        })
-        res.json({status:"success", user})
-    }catch(err){
-        res.status(500).json({status:"internal server error", err:err.message})
-    }
-}
-
-exports.updateUser = async(req, res) => {
-    const id = parseInt(req.params.id)
     try {
-        const user = await prisma.user.update({
-            where:{
-                id
-            },
-            data:req.body
-        })
-        res.json({status:"updated", user})
+        const otp = otpGen.generate(6, {upperCaseAlphabets:false, lowerCaseAlphabets:false, specialChars:false})
+        const newUser = await createUser({name, email, password, phoneNumber,role,otp})
+        res.status(201).send({msg:"successfully signed up", data:{
+            id:newUser.id,
+            otp
+        }})
     } catch (error) {
-        res.status(500).json({status:"internal server error", err:err.message})
+        console.log(error.stack)
+        res.status(500).json({msg:"something fialed"})
     }
 }
 
-exports.deleteUser = async(req, res)=>{
-    const id = parseInt(req.params.id)
+exports.verifyUser = async(req, res)=>{
+    const {id, otp} = req.body
     try {
-        const user = await prisma.user.delete({
+        const user = await prisma.user.findUnique({
             where:{
                 id
             }
         })
-        res.json({status:"deleted", user})
+
+        if(user.otp !== otp){
+            return res.status(400).json({err:"bad request", msg:"otp did not match"})
+        }
+        await prisma.user.update({
+            where:{
+                id
+            },
+            data:{
+                verified:true
+            }
+        })
+        res.json({title:"success", msg:"user verified successfully"})
     } catch (error) {
-        res.status(500).json({status:"internal server error", err:err.message})
+        
     }
 }
 
-exports.buyProduct = async(req, res)=>{
-    const id = parseInt(req.params.id)
-    const userId = parseInt(req.body.userId)
+exports.signIn = async (req, res)=>{
+    const {email, password} = req.body;
     try {
-        const user = await prisma.product.updateMany({
-            where:{id},
-            data:req.body
+        const user = await prisma.user.findUnique({
+            where:{
+                email
+            }
         })
-        res.json({status:"created", user})
+        if(!user){
+            return res.status(400).json({
+                title:"error",
+                msg:"user not found"
+            })
+        }
+        if(!user.verified){
+            return res.status(400).json({
+                title:"error",
+                msg:"your account is not verified"
+            })
+        }
+        if(!(user.password === md5(password))){
+            return res.status(400).json({
+                title:"error",
+                msg:"invalid email or password"
+            })
+        }
+        // creating token
+        const token = jwt.sign({id:user.id}, process.env.SECRET_KEY, {
+            expiresIn:"24h"
+        })
+
+        await prisma.user.update({
+            where:{
+                email
+            },
+            data:{
+                token
+            }
+        })
+
+        res.json({
+            title:"login success",
+            token
+        })
     } catch (error) {
-        res.status(500).send({status:"internal server error", err:error.message})
+        res.status(500).json({
+            title:"error",
+            msg:`error while login: ${error.message}`
+        })
     }
 }
+
+
+

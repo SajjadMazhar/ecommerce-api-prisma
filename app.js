@@ -1,5 +1,8 @@
 const express = require('express');
 const morgan = require('morgan');
+const authenticate = require("./middlewares/auth.middleware")
+const {PrismaClient} = require("@prisma/client")
+const prisma = new PrismaClient()
 const { 
     createProduct,
     createProducts,
@@ -14,13 +17,10 @@ const {
     updateSeller 
 } = require('./controllers/seller.controller')
 const {
-    createUser,
-    getUsers,
-    getUserById,
-    updateUser,
-    deleteUser,
-    buyProduct
-} = require("./controllers/user.controller")
+    signUp, 
+    verifyUser,
+    signIn
+} = require('./controllers/user.controller')
 require('dotenv').config();
 
 const app = express();
@@ -41,14 +41,28 @@ app.post("/seller/:id/product", createProduct)
 app.get("/seller/:id/product", getProducts)
 app.patch("/seller/:seller_id/product/:id", updateProduct)
 app.delete("/seller/:seller_id/product/:id", deleteProduct)
-app.post("/user/:id/product", buyProduct)
 
 // User controller routes
-app.post("/user", createUser)
-app.get("/user", getUsers)
-app.get("/user/:id", getUserById)
-app.patch("/user/:id", updateUser)
-app.delete("/user/:id", deleteUser)
+app.post("/auth/signup", signUp)
+app.post("/auth/verify", verifyUser)
+app.post("/auth/login", signIn)
+
+// protected routes
+app.get("/protected", authenticate, async(req, res)=>{
+    try {
+        const user = await prisma.user.findUnique({
+            where:{
+                id:req.id
+            }
+        })
+        res.json({
+            title:"success",
+            msg:`welcome ${user.name}, to protected route`
+        })
+    } catch (error) {
+        
+    }
+})
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`@ http://localhost:${PORT}`));

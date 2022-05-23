@@ -34,17 +34,28 @@ model Product{
   category String
   in_stock Boolean @default(true)
   seller Seller @relation(fields: [seller_id], references: [id])
-  user User? @relation(fields: [userId], references: [id])
   seller_id Int
-  userId Int?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
 
-model User{
+enum Role{
+  ADMIN
+  USER
+  SELLER
+}
+
+model User {
   id Int @id @default(autoincrement())
   name String @db.VarChar(30)
   email String @unique
   password String
-  products Product[]
+  phoneNumber String @db.VarChar(10)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  dob DateTime?
+  role Role
+  verified Boolean @default(false)
+  token String @default("")
+  otp String
 }

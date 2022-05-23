@@ -41,11 +41,14 @@ exports.createProducts = async(req, res)=>{
 
 exports.getProducts = async (req, res)=>{
     const id = req.params.id;
+    const {limit, offset} = req.query
     try{
         const products = await prisma.product.findMany({
             where:{
                 seller_id:parseInt(id)
-            }
+            },
+            take:limit,
+            skip:offset
         })
         res.send({status:"success", data:products})
     }catch(err){
