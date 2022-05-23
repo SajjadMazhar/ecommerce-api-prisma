@@ -31,7 +31,7 @@ function mailOTP(otp, email){
         subject:"Verification One Time Password",
         text:`Hi, your OTP is ${otp}`
     }
-    eydR5cCI6IkpXVCJ9.eyJpZCI6MiwiaWF0IjoxNjUzMjg3OTI3LCJleHAiOjE2NTMzNzQzMjd9.NlZDa90NJCeJ040v_iPz5ZBEHsDwlCw6RxKa2gQRgk0
+
     transport.sendMail(mailOptions, (err, info)=>{
         if(err){
             console.log(err)
