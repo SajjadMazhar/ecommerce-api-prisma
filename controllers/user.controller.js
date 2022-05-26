@@ -7,14 +7,8 @@ const {sendOTP, mailOTP} = require("../services/otp.service")
 const md5 = require("md5")
 
 exports.signUp = async(req, res) =>{
-    const {name, email, password, confirmPassword, phoneNumber, role='USER'} = req.body;
-    if(!(name && email && password && confirmPassword && phoneNumber && role)){
-        res.status(400).json({msg:"internal server error"})
-    }
-    if(password !== confirmPassword){
-        res.status(400).json({msg:"password don't match"})
-    }
-
+    const {name, email, password, phoneNumber, role='USER'} = req.body;
+    
     try {
         const otp = otpGen.generate(6, {upperCaseAlphabets:false, lowerCaseAlphabets:false, specialChars:false})
         const newUser = await createUser({name, email, password, phoneNumber,role,otp})
@@ -51,7 +45,10 @@ exports.verifyUser = async(req, res)=>{
         })
         res.json({title:"success", msg:"user verified successfully"})
     } catch (error) {
-        
+        res.status(500).json({
+            title:"error",
+            msg:`error while verifying user: ${error.message}`
+        })       
     }
 }
 
@@ -107,5 +104,24 @@ exports.signIn = async (req, res)=>{
     }
 }
 
-
-
+exports.deleteUser = async (req, res)=>{
+    const {id} = req.params
+    console.log(req.id, id)
+    try {
+        const user = await prisma.user.delete({
+            where:{
+                id:parseInt(id)
+            }
+        })
+        res.status(200).json({
+            status:"success",
+            msg:"user deleted successfully",
+            user
+        })
+    } catch (error) {
+        res.status(500).json({
+            status:"internal server error",
+            msg:"error while deleting user:"+error.message
+        })
+    }   
+}

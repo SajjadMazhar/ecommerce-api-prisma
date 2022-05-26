@@ -39,16 +39,41 @@ exports.createProducts = async(req, res)=>{
     }
 }
 
+exports.getAllProducts = async(req, res)=>{
+    const {
+        limit=10, offset=0, sortBy='createdAt',
+        sortOrder='asc'
+    } = req.query
+    try{
+        const products = await prisma.product.findMany({
+            take:limit,
+            skip:offset,
+            orderBy:{
+                [sortBy]:sortOrder
+            }
+        })
+        res.send({status:"success", data:products})
+    }catch(err){
+        res.status(500).send({status:err.message, msg:"error while getting products"})
+    }
+}
+
 exports.getProducts = async (req, res)=>{
     const id = req.params.id;
-    const {limit, offset} = req.query
+    const {
+        limit=10, offset=0, sortBy='createdAt',
+        sortOrder='asc'
+    } = req.query
     try{
         const products = await prisma.product.findMany({
             where:{
                 seller_id:parseInt(id)
             },
             take:limit,
-            skip:offset
+            skip:offset,
+            orderBy:{
+                [sortBy]:sortOrder
+            }
         })
         res.send({status:"success", data:products})
     }catch(err){

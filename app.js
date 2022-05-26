@@ -3,12 +3,15 @@ const morgan = require('morgan');
 const authenticate = require("./middlewares/auth.middleware")
 const {PrismaClient} = require("@prisma/client")
 const prisma = new PrismaClient()
+const {inputValidation} = require("./middlewares/validation.middleware")
+const {userCheckForDeletion} = require("./middlewares/delete.middleware")
 const { 
     createProduct,
     createProducts,
     getProducts, 
     updateProduct, 
-    deleteProduct 
+    deleteProduct, 
+    getAllProducts
 } = require('./controllers/product.controller');
 const {
     createSeller,
@@ -19,7 +22,8 @@ const {
 const {
     signUp, 
     verifyUser,
-    signIn
+    signIn,
+    deleteUser
 } = require('./controllers/user.controller')
 require('dotenv').config();
 
@@ -28,6 +32,9 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(morgan('dev'));
+app.get("/", (req, res)=>{
+    res.send("running")
+})
 
 // Seller controller routes
 app.post("/sellers", createSellers)
@@ -36,6 +43,7 @@ app.get("/seller", getSellers)
 app.patch("/seller/:id", updateSeller)
 
 // Product controller routes
+app.get("/products", getAllProducts)
 app.post("/seller/products", createProducts)
 app.post("/seller/:id/product", createProduct)
 app.get("/seller/:id/product", getProducts)
@@ -43,9 +51,10 @@ app.patch("/seller/:seller_id/product/:id", updateProduct)
 app.delete("/seller/:seller_id/product/:id", deleteProduct)
 
 // User controller routes
-app.post("/auth/signup", signUp)
+app.post("/auth/signup", inputValidation, signUp)
 app.post("/auth/verify", verifyUser)
 app.post("/auth/login", signIn)
+app.delete("/auth/delete/:id", authenticate, userCheckForDeletion, deleteUser)
 
 // protected routes
 app.get("/protected", authenticate, async(req, res)=>{
