@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient()
+const logger = require("../logger/devLogger")
 
 exports.createSeller = async (req, res)=>{
 
@@ -10,6 +11,7 @@ exports.createSeller = async (req, res)=>{
           name, email, phone_number, categories
         }
       })
+      logger.info("fetched seller")
       res.send({"status":"success"})
     }catch(err){
       res.send({err})
@@ -19,6 +21,7 @@ exports.createSeller = async (req, res)=>{
 exports.getSellers = async(req, res)=>{
   try{
     const sellers = await prisma.seller.findMany({include:{products:true}})
+    logger.info("fetched sellers")
     res.send(sellers)
   }catch(err){
     res.send({err})

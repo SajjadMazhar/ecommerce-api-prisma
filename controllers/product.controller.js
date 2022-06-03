@@ -1,23 +1,32 @@
 const { PrismaClient } = require('@prisma/client');
+const logger = require('../logger/devLogger');
 const prisma = new PrismaClient()
+const path = require("path")
 
 exports.createProduct = async(req, res)=>{
     
     const id = parseInt(req.params.id);
     const {
         name,
-        description, 
-        images=[], 
-        price, 
+        description,  
+        price,
         discounted_price,
         is_discounted,
         category,
         in_stock,
     } = req.body
+    if(!(name&&description&&price&&discounted_price&&is_discounted&&category&&in_stock)){
+        console.log(req.body.category)
+        return res.status(400).json({title:"failed", msg:"you left some empty fields"})
+    }
+    const imgFiles = req.files
+    const images = imgFiles.map(file => {
+        return "/static//uploads/"+file.filename
+    })
     try{
         const product = await prisma.product.create({
             data:{
-                name, description, images, price, discounted_price, is_discounted, category, in_stock, seller_id:id
+                name, description, images, price:parseInt(price), discounted_price:parseInt(discounted_price), is_discounted:Boolean(is_discounted), category, in_stock:Boolean(in_stock), seller_id:id
             }
         })
     
@@ -41,7 +50,7 @@ exports.createProducts = async(req, res)=>{
 
 exports.getAllProducts = async(req, res)=>{
     const {
-        limit=10, offset=0, sortBy='createdAt',
+        limit=10, offset=0, sortBy='created_at',
         sortOrder='asc'
     } = req.query
     try{
@@ -52,8 +61,10 @@ exports.getAllProducts = async(req, res)=>{
                 [sortBy]:sortOrder
             }
         })
+        logger.info("fetched products")
         res.send({status:"success", data:products})
     }catch(err){
+        logger.error("error while getting all products")
         res.status(500).send({status:err.message, msg:"error while getting products"})
     }
 }
@@ -61,7 +72,7 @@ exports.getAllProducts = async(req, res)=>{
 exports.getProducts = async (req, res)=>{
     const id = req.params.id;
     const {
-        limit=10, offset=0, sortBy='createdAt',
+        limit=10, offset=0, sortBy='created_at',
         sortOrder='asc'
     } = req.query
     try{
