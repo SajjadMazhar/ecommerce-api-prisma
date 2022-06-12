@@ -34,7 +34,8 @@ exports.verifyUser = async(req, res)=>{
             }
         })
         const redisOtp = await client.get(user.id.toString())
-
+        if(user.verified) return res.status(400).json({title:"error", msg:"user already verified"})
+        if(!redisOtp) return res.status(400).json({title:"error", msg:"otp expired, generate a new one"})
         if(redisOtp !== otp){
             return res.status(400).json({err:"bad request", msg:"otp did not match"})
         }
