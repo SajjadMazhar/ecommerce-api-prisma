@@ -24,7 +24,8 @@ const {
     signUp, 
     verifyUser,
     signIn,
-    deleteUser
+    deleteUser,
+    generateOtp
 } = require('./controllers/user.controller');
 const upload = require('./middlewares/multer.middleware');
 require('dotenv').config();
@@ -81,6 +82,7 @@ const {createOrder} = require("./controllers/order.controller");
 // User controller routes
 app.post("/auth/signup", inputValidation, signUp)
 app.post("/auth/verify", verifyUser)
+app.post("/auth/generateotp/:userId", generateOtp)
 app.post("/auth/login", signIn)
 app.delete("/auth/delete/:id", authenticateUser, userCheckForDeletion, deleteUser)
 

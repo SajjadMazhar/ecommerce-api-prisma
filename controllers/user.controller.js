@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken")
 const {createUser} = require("../services/user.service")
 const {sendOTP, mailOTP} = require("../services/otp.service")
 const md5 = require("md5")
+const client = require("../database/redis")
 
 exports.signUp = async(req, res) =>{
     const {name, email, password, phoneNumber, role='USER'} = req.body;
@@ -12,6 +13,7 @@ exports.signUp = async(req, res) =>{
     try {
         const otp = otpGen.generate(6, {upperCaseAlphabets:false, lowerCaseAlphabets:false, specialChars:false})
         const newUser = await createUser({name, email, password, phoneNumber,role,otp})
+        await client.setEx(newUser.id.toString(), 120, otp)
         mailOTP(otp, email)
         res.status(201).send({msg:"successfully signed up", data:{
             id:newUser.id,
@@ -31,8 +33,9 @@ exports.verifyUser = async(req, res)=>{
                 id
             }
         })
+        const redisOtp = await client.get(user.id.toString())
 
-        if(user.otp !== otp){
+        if(redisOtp !== otp){
             return res.status(400).json({err:"bad request", msg:"otp did not match"})
         }
         await prisma.user.update({
@@ -49,6 +52,28 @@ exports.verifyUser = async(req, res)=>{
             title:"error",
             msg:`error while verifying user: ${error.message}`
         })       
+    }
+}
+
+exports.generateOtp = async(req, res)=>{
+    const {userId} = req.params
+    console.log(userId)
+    try {
+        const user = await prisma.user.findUnique({
+            where:{
+                id:parseInt(userId)
+            }
+        })
+        if(!user) return res.status(404).json({title:"error", msg:"user not found"});
+        if(user.verified) return res.status(400).json({title:"error", msg:"user already verified"})
+
+        const otp = otpGen.generate(6, {upperCaseAlphabets:false, lowerCaseAlphabets:false, specialChars:false})
+        await client.setEx(userId, 120, otp)
+        mailOTP(otp, user.email)
+        res.status(201).json({title:"success", data:{id:user.id, otp}})
+
+    } catch (error) {
+        
     }
 }
 
