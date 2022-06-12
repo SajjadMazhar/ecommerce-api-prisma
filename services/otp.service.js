@@ -40,8 +40,6 @@ function mailOTP(otp, email){
             console.log("sent "+info.response)
         }
     })
-
-
 }
 
 module.exports = {

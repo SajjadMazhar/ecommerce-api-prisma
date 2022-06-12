@@ -10,52 +10,62 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-model Seller{
-  id Int @id @default(autoincrement())
-  name String @db.Char(30)
-  email String @unique
-  gst_number String?
-  phone_number String @db.Char(10)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  products Product[]
-  categories String[]
+model Seller {
+  id           Int       @id @default(autoincrement())
+  name         String    @db.Char(30)
+  email        String    @unique
+  gst_number   String?
+  phone_number String    @db.Char(10)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  products     Product[]
+  categories   String[]
 }
 
-model Product{
-  id Int @id @default(autoincrement())
-  name String
-  description String
-  images String[]
-  price Int 
+model Product {
+  id               Int      @id @default(autoincrement())
+  name             String
+  description      String
+  images           String[]
+  price            Int
   discounted_price Int
-  is_discounted Boolean @default(false)
-  category String
-  in_stock Boolean @default(true)
-  seller Seller @relation(fields: [seller_id], references: [id])
-  seller_id Int
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  is_discounted    Boolean  @default(false)
+  category         String
+  in_stock         Boolean  @default(true)
+  seller           Seller   @relation(fields: [seller_id], references: [id])
+  seller_id        Int
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
 }
 
-enum Role{
+enum Role {
   ADMIN
   USER
   SELLER
 }
 
 model User {
-  id Int @id @default(autoincrement())
-  name String @db.VarChar(30)
-  email String @unique
-  password String
-  phoneNumber String @db.VarChar(10)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  dob DateTime?
-  role Role
-  verified Boolean @default(false)
-  token String @default("")
-  otp String
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(30)
+  email       String    @unique
+  password    String
+  phoneNumber String    @db.VarChar(10)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  dob         DateTime?
+  role        Role
+  verified    Boolean   @default(false)
+  token       String    @default("")
+  otp         String
+  Order       Order[]
+}
+
+model Order {
+  id         Int      @id @default(autoincrement())
+  productIds Int[]
+  user       User     @relation(fields: [userId], references: [id])
+  total      Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  userId     Int
 }

@@ -5,6 +5,10 @@ const jwt = require("jsonwebtoken")
 module.exports = async (req, res, next) => {
     console.log(req.params.id)
     const authorization = req.headers.authorization
+    console.log(authorization)
+    if(!authorization){
+        return res.status(400).json({status:"failed", msg:"authorization failed: cookie does not exist"})
+    }
     const token = authorization.split(" ")[1]
     const decoded = jwt.verify(token, process.env.SECRET_KEY)
     

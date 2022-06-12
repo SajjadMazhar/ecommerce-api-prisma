@@ -1,7 +1,8 @@
 const { PrismaClient } = require('@prisma/client');
 const logger = require('../logger/devLogger');
 const prisma = new PrismaClient()
-const path = require("path")
+const client = require("../database/redis")
+const host = 'http://localhost:3000'
 
 exports.createProduct = async(req, res)=>{
     
@@ -21,18 +22,32 @@ exports.createProduct = async(req, res)=>{
     }
     const imgFiles = req.files
     const images = imgFiles.map(file => {
-        return "/static//uploads/"+file.filename
+        return `${host}/static//uploads/`+file.filename
     })
     try{
-        const product = await prisma.product.create({
+        // const product = await prisma.product.create({
+        //     data:{
+        //         name, description, images, price:parseInt(price), discounted_price:parseInt(discounted_price), is_discounted:Boolean(is_discounted), category, in_stock:Boolean(in_stock), seller_id:id
+        //     }
+        // })
+        const product = await prisma.seller.update({
+            where:{
+                id:parseInt(id)
+            },
             data:{
-                name, description, images, price:parseInt(price), discounted_price:parseInt(discounted_price), is_discounted:Boolean(is_discounted), category, in_stock:Boolean(in_stock), seller_id:id
+                products:{
+                    create:[
+                        {
+                            name, description, images, price:parseInt(price), discounted_price:parseInt(discounted_price), is_discounted:Boolean(is_discounted), category, in_stock:Boolean(in_stock)
+                        }
+                    ]
+                }
             }
         })
-    
-        res.status(201).send({status:"created", data:product})
+        res.status(201).send({status:"created", product})
     }catch(err){
-        res.status(500).send({status:"error"})
+
+        res.status(500).send({status:"error", msg:err.message})
     }
     
 }
@@ -49,6 +64,11 @@ exports.createProducts = async(req, res)=>{
 }
 
 exports.getAllProducts = async(req, res)=>{
+    let products = await client.get("products")
+    console.log(products)
+    if(products){
+        return res.send({status:"success", data:JSON.parse(products)})
+    }
     const {
         limit=10, offset=0, sortBy='created_at',
         sortOrder='asc'
@@ -62,6 +82,7 @@ exports.getAllProducts = async(req, res)=>{
             }
         })
         logger.info("fetched products")
+        client.setEx("products", 20, JSON.stringify(products))
         res.send({status:"success", data:products})
     }catch(err){
         logger.error("error while getting all products")
